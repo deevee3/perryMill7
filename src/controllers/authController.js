@@ -38,7 +38,8 @@ const callback = async (req, res, next) => {
   }
 
   try {
-    const { user } = await req.app.locals.workos.userManagement.authenticateWithCode({
+    const { user, accessToken, refreshToken, session: authSession } =
+      await req.app.locals.workos.userManagement.authenticateWithCode({
       clientId: process.env.WORKOS_CLIENT_ID,
       code,
     });
@@ -48,6 +49,12 @@ const callback = async (req, res, next) => {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+    };
+
+    req.session.authTokens = {
+      accessToken: accessToken ?? null,
+      refreshToken: refreshToken ?? null,
+      expiresAt: authSession?.expiresAt ?? null,
     };
 
     return res.redirect('/');

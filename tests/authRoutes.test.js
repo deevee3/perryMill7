@@ -5,6 +5,8 @@ const setTestEnv = () => {
   process.env.WORKOS_CLIENT_ID = 'client_123';
   process.env.APP_BASE_URL = 'http://localhost:3000';
   process.env.SESSION_SECRET = 'test-secret';
+  process.env.SUPABASE_URL = 'https://example.supabase.co';
+  process.env.SUPABASE_ANON_KEY = 'anon-key';
 };
 
 describe('Auth routes', () => {
@@ -12,6 +14,8 @@ describe('Auth routes', () => {
   let mockGetAuthorizationUrl;
   let mockAuthenticateWithCode;
   let mockFetchBooks;
+  let mockGetSupabaseClient;
+  let mockGetSupabaseUser;
 
   beforeEach(async () => {
     jest.resetModules();
@@ -28,6 +32,15 @@ describe('Auth routes', () => {
         link: 'https://books.toscrape.com/example-book',
       },
     ]);
+    mockGetSupabaseClient = jest.fn().mockResolvedValue({
+      auth: {
+        setSession: jest.fn().mockResolvedValue({ data: null, error: null }),
+      },
+    });
+    mockGetSupabaseUser = jest.fn().mockResolvedValue({
+      id: 'supabase-user-123',
+      email: 'user@example.com',
+    });
 
     jest.doMock('@workos-inc/node', () => ({
       WorkOS: jest.fn().mockImplementation(() => ({
@@ -42,6 +55,11 @@ describe('Auth routes', () => {
       fetchBooks: mockFetchBooks,
     }));
 
+    jest.doMock('../src/services/supabaseClient', () => ({
+      getSupabaseClient: mockGetSupabaseClient,
+      getSupabaseUser: mockGetSupabaseUser,
+    }));
+
     app = require('../src/app');
   });
 
@@ -49,10 +67,13 @@ describe('Auth routes', () => {
     jest.resetAllMocks();
     jest.dontMock('@workos-inc/node');
     jest.dontMock('../src/services/scraper');
+    jest.dontMock('../src/services/supabaseClient');
     delete process.env.WORKOS_API_KEY;
     delete process.env.WORKOS_CLIENT_ID;
     delete process.env.APP_BASE_URL;
     delete process.env.SESSION_SECRET;
+    delete process.env.SUPABASE_URL;
+    delete process.env.SUPABASE_ANON_KEY;
   });
 
   it('redirects to WorkOS for login', async () => {
@@ -99,6 +120,7 @@ describe('Auth routes', () => {
         firstName: 'Ada',
         lastName: 'Lovelace',
       },
+      accessToken: 'access-token',
     });
 
     const agent = request.agent(app);
@@ -110,6 +132,9 @@ describe('Auth routes', () => {
     expect(homeResponse.text).toContain('Example Book');
     expect(homeResponse.text).toContain('Ada Lovelace');
     expect(mockFetchBooks).toHaveBeenCalled();
+    expect(mockGetSupabaseClient).toHaveBeenCalledWith({ accessToken: 'access-token' });
+    expect(mockGetSupabaseUser).toHaveBeenCalledWith('access-token');
+    expect(homeResponse.text).toContain('Supabase user ID');
   });
 
   it('destroys session on logout', async () => {

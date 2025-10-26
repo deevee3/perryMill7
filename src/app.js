@@ -4,10 +4,18 @@ const path = require('path');
 const dotenv = require('dotenv');
 const { WorkOS } = require('@workos-inc/node');
 const { fetchBooks } = require('./services/scraper');
+const { getSupabaseClient, getSupabaseUser } = require('./services/supabaseClient');
 
 dotenv.config();
 
-const requiredEnv = ['WORKOS_API_KEY', 'WORKOS_CLIENT_ID', 'APP_BASE_URL', 'SESSION_SECRET'];
+const requiredEnv = [
+  'WORKOS_API_KEY',
+  'WORKOS_CLIENT_ID',
+  'APP_BASE_URL',
+  'SESSION_SECRET',
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+];
 const missingEnv = requiredEnv.filter((key) => !process.env[key]);
 
 if (missingEnv.length > 0) {
@@ -53,14 +61,21 @@ app.get('/', async (req, res, next) => {
   const user = req.session.user || null;
 
   if (!user) {
-    return res.render('home', { user: null, books: [] });
+    return res.render('home', { user: null, books: [], supabaseUser: null });
   }
 
   try {
+    const accessToken = req.session.authTokens?.accessToken;
+    let supabaseUser = null;
+    if (accessToken) {
+      await getSupabaseClient({ accessToken });
+      supabaseUser = await getSupabaseUser(accessToken);
+    }
+
     const books = await fetchBooks();
     const limit = parseInt(process.env.SCRAPER_RESULT_LIMIT || '12', 10);
     const limitedBooks = Number.isNaN(limit) ? books : books.slice(0, limit);
-    return res.render('home', { user, books: limitedBooks });
+    return res.render('home', { user, books: limitedBooks, supabaseUser });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Failed to fetch books:', error);
