@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WorkOS AuthKit Demo</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 0;
+        color: #1f1f1f;
+      }
+      header {
+        background-color: #0d1321;
+        color: #ffffff;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      main {
+        max-width: 600px;
+        margin: 2rem auto;
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      }
+      h1 {
+        margin-top: 0;
+      }
+      .actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      a.button,
+      button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
+        border-radius: 999px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      a.button.primary {
+        background: linear-gradient(135deg, #2c7be5, #6a11cb);
+        color: #ffffff;
+      }
+      a.button.secondary {
+        background-color: #eef2ff;
+        color: #212529;
+      }
+      button.logout {
+        background-color: #ff4757;
+        color: #ffffff;
+        border: none;
+      }
+      .profile {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        background-color: #f8f9ff;
+      }
+      .muted {
+        color: #65748b;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>WorkOS AuthKit Sample</h1>
+    </header>
+    <main>
+      <% if (user) { %>
+      <h2>Welcome back, <%= [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email %>!</h2>
+      <p class="muted">Here are the latest books scraped from books.toscrape.com.</p>
+      <div class="profile">
+        <h3>Your profile</h3>
+        <p><span class="muted">User ID:</span> <%= user.id %></p>
+        <p><span class="muted">Email:</span> <%= user.email %></p>
+        <% if (user.firstName || user.lastName) { %>
+        <p><span class="muted">Name:</span> <%= [user.firstName, user.lastName].filter(Boolean).join(' ') %></p>
+        <% } %>
+      </div>
+      <section class="books">
+        <% if (books.length === 0) { %>
+        <p>No books available right now. Try refreshing in a moment.</p>
+        <% } else { %>
+        <ul class="book-grid">
+          <% books.forEach((book) => { %>
+          <li class="book-card">
+            <div class="book-header">
+              <h3><a href="<%= book.link %>" target="_blank" rel="noopener noreferrer"><%= book.title %></a></h3>
+              <span class="price"><%= book.price %></span>
+            </div>
+            <p class="muted">Rating: <%= book.rating %></p>
+            <p class="muted"><%= book.stock %></p>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+      <form method="post" action="/auth/logout">
+        <button type="submit" class="logout">Log out</button>
+      </form>
+      <% } else { %>
+      <h2>Welcome!</h2>
+      <p>Authenticate with WorkOS AuthKit to reveal the hidden "Hello World" message.</p>
+      <div class="actions">
+        <a class="button primary" href="/auth/login">Continue with AuthKit</a>
+        <a class="button secondary" href="/auth/signup">Create an account</a>
+      </div>
+      <% } %>
+    </main>
+  </body>
+</html>
